@@ -1,0 +1,40 @@
+@extends('layouts.app')
+
+@section('content')
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Lista zwierząt</h1>
+        </div>
+        <div class="col-auto">
+            <a href="{{ route('pets.create') }}" class="btn btn-primary">Dodaj zwierzę</a>
+        </div>
+    </div>
+
+    @if(isset($pets) && is_array($pets) && count($pets) > 0)
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nazwa</th>
+                    <th>Kategoria</th>
+                    <th>Status</th>
+                    <th>Akcje</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($pets as $pet)
+                    <tr>
+                        <td>{{ $pet['id'] ?? 'Brak' }}</td>
+                        <td>{{ $pet['name'] ?? 'Brak' }}</td>
+                        <td>{{ $pet['category']['name'] ?? 'Brak' }}</td>
+                        <td>
+                            @if(isset($pet['status']))
+                                @if($pet['status'] == 'available')
+                                    <span class="badge bg-success">Dostępny</span>
+                                @elseif($pet['status'] == 'pending')
+                                    <span class="badge bg-warning">Oczekujący</span>
+                                @elseif($pet['status'] == 'sold')
+                                    <span class="badge bg-danger">Sprzedany</span>
+                                @else
+                                    <span class="badge bg-secondary">{{ $pet['status'] }}</span>
