@@ -91,7 +91,7 @@
                     @error('photoUrls')
                     <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                        <div class="form-text">Wprowadź adresy URL oddzielone przecinkami, np. "http://example.com/img1.jpg, http://example.com/img2.jpg"</div>
+                        <div class="form-text">Wprowadź adresy URL oddzielone przecinkami, np. "https://picsum.photos/id/237/200/300" Fskopiuj i sprawdź"</div>
                     </div>
 
                     <div class="text-end">

@@ -7,9 +7,9 @@ class PetDataProcessor
     /**
      * Przetwarza dane zwierzęcia z formularza na format wymagany przez API.
      *
-     * @param array $validatedData Zwalidowane dane z formularza
-     * @param int|null $id ID zwierzęcia (opcjonalne, dla aktualizacji)
-     * @return array Przetworzone dane gotowe do wysłania do API
+     * @param array $validatedData
+     * @param int|null $id
+     * @return array
      */
     public function process(array $validatedData, ?int $id = null): array
     {
@@ -40,8 +40,8 @@ class PetDataProcessor
     /**
      * Przetwarza string z tagami na tablicę obiektów tagów.
      *
-     * @param string $tagsString String z tagami oddzielonymi przecinkami
-     * @return array Tablica obiektów tagów
+     * @param string $tagsString
+     * @return array
      */
     private function processTags(string $tagsString): array
     {
@@ -65,8 +65,8 @@ class PetDataProcessor
     /**
      * Przetwarza string z URL-ami zdjęć na tablicę URL-i.
      *
-     * @param string $photoUrlsString String z URL-ami oddzielonymi przecinkami
-     * @return array Tablica URL-i zdjęć
+     * @param string $photoUrlsString
+     * @return array
      */
     private function processPhotoUrls(string $photoUrlsString): array
     {

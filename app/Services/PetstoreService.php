@@ -9,6 +9,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class PetstoreService
 {
+    /* Na produkcji umieściłbym ten fragment w .env zostawiłem tutaj pod zadanie
+    np PETSTORE_API_URL=https://petstore.swagger.io/v2
+    */
     protected string $baseUrl = 'https://petstore.swagger.io/v2';
 
     public function getAllPets(): ?array

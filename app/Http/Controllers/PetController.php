@@ -16,6 +16,8 @@ class PetController extends Controller
 {
     protected PetstoreService $petstoreService;
     protected PetDataProcessor $petDataProcessor;
+    protected const ITEMS_PER_PAGE = 30;
+
 
     public function __construct(PetstoreService $petstoreService, PetDataProcessor $petDataProcessor)
     {
@@ -39,13 +41,25 @@ class PetController extends Controller
             );
 
             if ($petsCollection === null) {
-                return view('pets.index')->with('error', 'Nie udało się pobrać zwierząt. Spróbuj ponownie później.');
+                $pets = new LengthAwarePaginator(
+                    collect([]),
+                    0,
+                    self::ITEMS_PER_PAGE,
+                    1,
+                    ['path' => $request->url()]
+                );
+
+                return view('pets.index', [
+                    'pets' => $pets,
+                    'direction' => $request->get('direction', 'asc'),
+                    'error' => 'Nie udało się pobrać danych z API Petstore. Serwer może być niedostępny lub wystąpił błąd komunikacji.'
+                ]);
             }
 
             $pets = $this->petstoreService->paginatePets(
                 $petsCollection,
                 (int) $request->get('page', 1),
-                30,
+                self::ITEMS_PER_PAGE,
                 $request->url()
             );
 
@@ -54,10 +68,28 @@ class PetController extends Controller
                 'direction' => $request->get('direction', 'asc')
             ]);
         } catch (\Exception $e) {
-            Log::error('Błąd pobierania zwierząt', ['error' => $e->getMessage()]);
-            return view('pets.index')->with('error', 'Nie udało się pobrać zwierząt. Spróbuj ponownie później.');
+            Log::error('Błąd pobierania zwierząt', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_params' => $request->all()
+            ]);
+
+            $pets = new LengthAwarePaginator(
+                collect([]),
+                0,
+                self::ITEMS_PER_PAGE,
+                1,
+                ['path' => $request->url()]
+            );
+
+            return view('pets.index', [
+                'pets' => $pets,
+                'direction' => $request->get('direction', 'asc'),
+                'error' => 'Wystąpił nieoczekiwany błąd podczas pobierania danych. Szczegóły zostały zapisane w logach. Proszę spróbować ponownie później.'
+            ]);
         }
     }
+
 
     /**
      * Wyświetla szczegóły zwierzęcia.
