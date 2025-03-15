@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\PetstoreService;
+use App\Services\PetDataProcessor;
 use Illuminate\Support\ServiceProvider;
 
 class PetstoreServiceProvider extends ServiceProvider
@@ -14,6 +15,10 @@ class PetstoreServiceProvider extends ServiceProvider
     {
         $this->app->singleton(PetstoreService::class, function ($app) {
             return new PetstoreService();
+        });
+
+        $this->app->singleton(PetDataProcessor::class, function ($app) {
+            return new PetDataProcessor();
         });
     }
 

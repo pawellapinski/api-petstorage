@@ -40,7 +40,6 @@ class Handler extends ExceptionHandler
             //
         });
 
-        // Obsługa błędów związanych z API
         $this->renderable(function (ConnectionException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Nie można połączyć się z serwerem API.'], 503);

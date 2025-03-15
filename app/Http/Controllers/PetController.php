@@ -3,200 +3,188 @@
 namespace App\Http\Controllers;
 
 use App\Services\PetstoreService;
+use App\Services\PetDataProcessor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Pagination\LengthAwarePaginator;
+use App\Http\Requests\StorePetRequest;
+use App\Http\Requests\UpdatePetRequest;
 
 class PetController extends Controller
 {
-    protected $petstoreService;
+    protected PetstoreService $petstoreService;
+    protected PetDataProcessor $petDataProcessor;
 
-    public function __construct(PetstoreService $petstoreService)
+    public function __construct(PetstoreService $petstoreService, PetDataProcessor $petDataProcessor)
     {
         $this->petstoreService = $petstoreService;
+        $this->petDataProcessor = $petDataProcessor;
+        $this->middleware('api.errors');
     }
 
-    public function index(Request $request)
+    /**
+     * Wyświetla listę zwierząt z możliwością sortowania i wyszukiwania.
+     *
+     * @param Request $request
+     * @return View
+     */
+    public function index(Request $request): View
     {
-        $pets = $this->petstoreService->getAllPets();
+        try {
+            $petsCollection = $this->petstoreService->searchPets(
+                $request->get('search_id'),
+                $request->get('direction', 'asc')
+            );
 
-        if ($pets !== null) {
-            $petsCollection = collect($pets);
-
-            // Wyszukiwanie po ID
-            if ($request->has('search_id')) {
-                $petsCollection = $petsCollection->filter(function ($pet) use ($request) {
-                    return $pet['id'] == $request->search_id;
-                });
+            if ($petsCollection === null) {
+                return view('pets.index')->with('error', 'Nie udało się pobrać zwierząt. Spróbuj ponownie później.');
             }
 
-            // Sortowanie
-            $direction = $request->get('direction', 'asc');
-            if ($direction === 'desc') {
-                $petsCollection = $petsCollection->sortByDesc('id');
-            } else {
-                $petsCollection = $petsCollection->sortBy('id');
-            }
-
-            $paginatedPets = new \Illuminate\Pagination\LengthAwarePaginator(
-                $petsCollection->forPage(request()->get('page', 1), 30),
-                count($petsCollection),
+            $pets = $this->petstoreService->paginatePets(
+                $petsCollection,
+                (int) $request->get('page', 1),
                 30,
-                request()->get('page', 1),
-                ['path' => request()->url()]
+                $request->url()
             );
 
             return view('pets.index', [
-                'pets' => $paginatedPets,
-                'direction' => $direction
+                'pets' => $pets,
+                'direction' => $request->get('direction', 'asc')
             ]);
+        } catch (\Exception $e) {
+            Log::error('Błąd pobierania zwierząt', ['error' => $e->getMessage()]);
+            return view('pets.index')->with('error', 'Nie udało się pobrać zwierząt. Spróbuj ponownie później.');
         }
-
-        return view('pets.index')->with('error', 'Nie udało się pobrać zwierząt. Spróbuj ponownie później.');
     }
 
-
-
-    public function show($id)
+    /**
+     * Wyświetla szczegóły zwierzęcia.
+     *
+     * @param int $id
+     * @return View|RedirectResponse
+     */
+    public function show(int $id): View|RedirectResponse
     {
-        $pet = $this->petstoreService->getPet($id);
-
-        if ($pet === null) {
-            return redirect()->route('pets.index')->with('error', 'Nie znaleziono zwierzęcia o podanym ID.');
+        try {
+            $pet = $this->petstoreService->getPet($id);
+            if (!$pet) {
+                return redirect()->route('pets.index')->with('error', 'Nie znaleziono zwierzęcia o podanym ID.');
+            }
+            return view('pets.show', compact('pet'));
+        } catch (\Exception $e) {
+            Log::error('Błąd podczas wyświetlania zwierzęcia', ['error' => $e->getMessage()]);
+            return redirect()->route('pets.index')->with('error', 'Wystąpił błąd podczas pobierania szczegółów zwierzęcia.');
         }
-
-        return view('pets.show', compact('pet'));
     }
 
-    public function create()
+    /**
+     * Wyświetla formularz tworzenia nowego zwierzęcia.
+     *
+     * @return View
+     */
+    public function create(): View
     {
         return view('pets.create');
     }
 
-    public function store(Request $request)
+    /**
+     * Zapisuje nowe zwierzę.
+     *
+     * @param Request $request
+     * @return RedirectResponse
+     */
+    public function store(StorePetRequest $request): RedirectResponse
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'nullable|integer',
-            'category_name' => 'nullable|string|max:255',
-            'status' => 'required|in:available,pending,sold',
-            'tags' => 'nullable|string',
-            'photoUrls' => 'nullable|string'
-        ]);
+        try {
+            $validatedData = $request->validated();
 
-        $tags = [];
-        if (!empty($validatedData['tags'])) {
-            $tagNames = explode(',', $validatedData['tags']);
-            foreach ($tagNames as $i => $name) {
-                $tags[] = ['id' => $i + 1, 'name' => trim($name)];
+            $petData = $this->petDataProcessor->process($validatedData);
+            $pet = $this->petstoreService->createPet($petData);
+
+            if ($pet !== null) {
+                Log::info('Utworzono nowe zwierzę', ['id' => $pet['id']]);
+                return redirect()->route('pets.show', $pet['id'])
+                    ->with('success', "Zwierzę zostało utworzone pomyślnie. ID: {$pet['id']}");
             }
+
+            return redirect()->back()->withInput()
+                ->with('error', 'Nie udało się utworzyć zwierzęcia. Spróbuj ponownie.');
+        } catch (\Exception $e) {
+            Log::error('Błąd tworzenia zwierzęcia', ['error' => $e->getMessage()]);
+            return redirect()->back()->withInput()
+                ->with('error', 'Wystąpił błąd podczas tworzenia zwierzęcia.');
         }
-
-        $photoUrls = [];
-        if (!empty($validatedData['photoUrls'])) {
-            $photoUrls = array_map('trim', explode(',', $validatedData['photoUrls']));
-        }
-
-        $petData = [
-            'name' => $validatedData['name'],
-            'status' => $validatedData['status'],
-            'photoUrls' => $photoUrls,
-            'tags' => $tags
-        ];
-
-        if (!empty($validatedData['category_name'])) {
-            $petData['category'] = [
-                'id' => $validatedData['category_id'] ?? 0,
-                'name' => $validatedData['category_name']
-            ];
-        }
-
-        $pet = $this->petstoreService->createPet($petData);
-
-        if ($pet !== null) {
-            Log::info('Utworzono nowe zwierzę', ['id' => $pet['id']]);
-            $newPet = $this->petstoreService->getPet($pet['id']);
-            if ($newPet && $newPet['name'] === $validatedData['name']) {
-                return redirect()->route('pets.show', $newPet['id'])
-                    ->with('success', "Zwierzę zostało utworzone pomyślnie. ID: {$newPet['id']}");
-            }
-        }
-
-        return redirect()->back()->withInput()
-            ->with('error', 'Nie udało się utworzyć zwierzęcia. Spróbuj ponownie.');
     }
 
-
-    public function edit($id)
+    /**
+     * Wyświetla formularz edycji zwierzęcia.
+     *
+     * @param int $id
+     * @return View|RedirectResponse
+     */
+    public function edit(int $id): View|RedirectResponse
     {
-        $pet = $this->petstoreService->getPet($id);
+        try {
+            $pet = $this->petstoreService->getPet($id);
 
-        if ($pet === null) {
-            return redirect()->route('pets.index')->with('error', 'Nie znaleziono zwierzęcia o podanym ID.');
-        }
-
-        return view('pets.edit', compact('pet'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'nullable|integer',
-            'category_name' => 'nullable|string|max:255',
-            'status' => 'required|in:available,pending,sold',
-            'tags' => 'nullable|string',
-            'photoUrls' => 'nullable|string'
-        ]);
-
-        // Przetwarzanie tagów
-        $tags = [];
-        if (!empty($validatedData['tags'])) {
-            $tagNames = explode(',', $validatedData['tags']);
-            foreach ($tagNames as $i => $name) {
-                $tags[] = ['id' => $i + 1, 'name' => trim($name)];
+            if ($pet === null) {
+                return redirect()->route('pets.index')->with('error', 'Nie znaleziono zwierzęcia o podanym ID.');
             }
+
+            return view('pets.edit', compact('pet'));
+        } catch (\Exception $e) {
+            Log::error('Błąd podczas edycji zwierzęcia', ['error' => $e->getMessage()]);
+            return redirect()->route('pets.index')->with('error', 'Wystąpił błąd podczas edycji zwierzęcia.');
         }
-
-        // Przetwarzanie adresów URL zdjęć
-        $photoUrls = [];
-        if (!empty($validatedData['photoUrls'])) {
-            $photoUrls = array_map('trim', explode(',', $validatedData['photoUrls']));
-        }
-
-        // Przygotowanie danych dla API
-        $petData = [
-            'id' => (int)$id,
-            'name' => $validatedData['name'],
-            'status' => $validatedData['status'],
-            'photoUrls' => $photoUrls,
-            'tags' => $tags
-        ];
-
-        // Dodanie kategorii, jeśli podano
-        if (!empty($validatedData['category_name'])) {
-            $petData['category'] = [
-                'id' => $validatedData['category_id'] ?? 0,
-                'name' => $validatedData['category_name']
-            ];
-        }
-
-        $pet = $this->petstoreService->updatePet($petData);
-
-        if ($pet === null) {
-            return redirect()->back()->withInput()->with('error', 'Nie udało się zaktualizować zwierzęcia. Spróbuj ponownie.');
-        }
-
-        return redirect()->route('pets.show', $id)->with('success', 'Zwierzę zostało zaktualizowane pomyślnie.');
     }
 
-    public function destroy($id)
+    /**
+     * Aktualizuje dane zwierzęcia.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return RedirectResponse
+     */
+    public function update(UpdatePetRequest $request, int $id): RedirectResponse
     {
-        $result = $this->petstoreService->deletePet($id);
+        try {
+            $validatedData = $request->validated();
 
-        if (!$result) {
-            return redirect()->back()->with('error', 'Nie udało się usunąć zwierzęcia. Spróbuj ponownie.');
+            $petData = $this->petDataProcessor->process($validatedData, $id);
+            $pet = $this->petstoreService->updatePet($petData);
+
+            if ($pet === null) {
+                return redirect()->back()->withInput()->with('error', 'Nie udało się zaktualizować zwierzęcia. Spróbuj ponownie.');
+            }
+
+            return redirect()->route('pets.show', $id)->with('success', 'Zwierzę zostało zaktualizowane pomyślnie.');
+        } catch (\Exception $e) {
+            Log::error('Błąd aktualizacji zwierzęcia', ['error' => $e->getMessage()]);
+            return redirect()->back()->withInput()->with('error', 'Wystąpił błąd podczas aktualizacji zwierzęcia.');
         }
+    }
 
-        return redirect()->route('pets.index')->with('success', 'Zwierzę zostało usunięte pomyślnie.');
+    /**
+     * Usuwa zwierzę.
+     *
+     * @param int $id
+     * @return RedirectResponse
+     */
+    public function destroy(int $id): RedirectResponse
+    {
+        try {
+            $result = $this->petstoreService->deletePet($id);
+
+            if (!$result) {
+                return redirect()->back()->with('error', 'Nie udało się usunąć zwierzęcia. Spróbuj ponownie.');
+            }
+
+            return redirect()->route('pets.index')->with('success', 'Zwierzę zostało usunięte pomyślnie.');
+        } catch (\Exception $e) {
+            Log::error('Błąd usuwania zwierzęcia', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Wystąpił błąd podczas usuwania zwierzęcia.');
+        }
     }
 }
