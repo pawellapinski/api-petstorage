@@ -5,7 +5,6 @@ namespace App\Services;
 class PetDataProcessor
 {
     /**
-     * Przetwarza dane zwierzęcia z formularza na format wymagany przez API.
      *
      * @param array $validatedData
      * @param int|null $id
@@ -38,8 +37,6 @@ class PetDataProcessor
     }
 
     /**
-     * Przetwarza string z tagami na tablicę obiektów tagów.
-     *
      * @param string $tagsString
      * @return array
      */
@@ -63,7 +60,6 @@ class PetDataProcessor
     }
 
     /**
-     * Przetwarza string z URL-ami zdjęć na tablicę URL-i.
      *
      * @param string $photoUrlsString
      * @return array

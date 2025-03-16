@@ -27,8 +27,6 @@ class PetController extends Controller
     }
 
     /**
-     * Wyświetla listę zwierząt z możliwością sortowania i wyszukiwania.
-     *
      * @param Request $request
      * @return View
      */
@@ -92,8 +90,6 @@ class PetController extends Controller
 
 
     /**
-     * Wyświetla szczegóły zwierzęcia.
-     *
      * @param int $id
      * @return View|RedirectResponse
      */
@@ -112,8 +108,6 @@ class PetController extends Controller
     }
 
     /**
-     * Wyświetla formularz tworzenia nowego zwierzęcia.
-     *
      * @return View
      */
     public function create(): View
@@ -122,8 +116,6 @@ class PetController extends Controller
     }
 
     /**
-     * Zapisuje nowe zwierzę.
-     *
      * @param Request $request
      * @return RedirectResponse
      */
@@ -151,8 +143,6 @@ class PetController extends Controller
     }
 
     /**
-     * Wyświetla formularz edycji zwierzęcia.
-     *
      * @param int $id
      * @return View|RedirectResponse
      */
@@ -173,8 +163,6 @@ class PetController extends Controller
     }
 
     /**
-     * Aktualizuje dane zwierzęcia.
-     *
      * @param Request $request
      * @param int $id
      * @return RedirectResponse
@@ -199,8 +187,6 @@ class PetController extends Controller
     }
 
     /**
-     * Usuwa zwierzę.
-     *
      * @param int $id
      * @return RedirectResponse
      */
