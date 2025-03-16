@@ -7,6 +7,39 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+Instalacja: 
+
+Krok 1: Sklonuj projekt z GitHub
+
+git clone https://github.com/pawellapinski/api-petstorage
+
+Krok 2: Zainstaluj zależności
+
+composer install
+
+Krok 3: Skonfiguruj środowisko
+
+Skopiuj plik .env.example do .env: cp .env.example .env
+Wypełnij plik .env odpowiednimi danymi
+
+Krok 4: Uruchom migracje
+
+php artisan migrate
+
+Krok 5: Uruchom aplikację
+
+php artisan serve
+
+
+
+Aplikacja API, która pozwala na zarządzanie danymi o zwierzętach. Aplikacja korzysta z frameworka Laravel i oferuje następujące funkcjonalności:
+
+Lista zwierząt
+Dodawanie nowych zwierząt
+Edycja istniejących zwierząt
+Usuwanie zwierząt
+
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

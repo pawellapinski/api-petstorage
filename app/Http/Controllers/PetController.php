@@ -16,7 +16,7 @@ class PetController extends Controller
 {
     protected PetstoreService $petstoreService;
     protected PetDataProcessor $petDataProcessor;
-    protected const ITEMS_PER_PAGE = 30;
+    public const ITEMS_PER_PAGE = 30;
 
 
     public function __construct(PetstoreService $petstoreService, PetDataProcessor $petDataProcessor)
