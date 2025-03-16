@@ -11,12 +11,10 @@ class UpdatePetRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Każdy użytkownik może aktualizować zwierzęta
+        return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -32,8 +30,6 @@ class UpdatePetRequest extends FormRequest
     }
 
     /**
-     * Get custom messages for validator errors.
-     *
      * @return array
      */
     public function messages(): array

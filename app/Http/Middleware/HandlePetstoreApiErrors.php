@@ -12,8 +12,6 @@ use Symfony\Component\HttpFoundation\Response;
 class HandlePetstoreApiErrors
 {
     /**
-     * Handle an incoming request.
-     *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
      * @return mixed
