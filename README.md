@@ -39,6 +39,7 @@ Dodawanie nowych zwierząt
 Edycja istniejących zwierząt
 Usuwanie zwierząt
 
+![pobrane (9)](https://github.com/user-attachments/assets/bdd6c15c-1eaf-4d38-99b3-2a26bbbf46b5)
 
 ## About Laravel
 
